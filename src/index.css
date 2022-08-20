@@ -3,13 +3,22 @@ body {
     background: black;
     margin: 0;
     padding: 0;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
-
+.vertical-buttons{
+    display: flex;
+    flex-direction: column;
+}
+button{
+    padding: 5px;
+    margin: 2px;
+}
 #carCanvas {
     background: darkgrey;
 }
-.box{
+.box {
     height: 100px;
     width: 100px;
     background: pink;

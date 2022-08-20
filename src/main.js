@@ -55,7 +55,7 @@ class Car {
 
 
 
-    draw(ctx, color,drawSensor=false) {
+    draw(ctx, color, drawSensor = false) {
         if (this.damage) {
             ctx.fillStyle = "grey"
         } else {
@@ -214,9 +214,26 @@ class NeuralNetwork {
             )
 
         }
-        console.log(output)
+        //console.log(output)
         return output
 
+    }
+
+    static mutate(network, amount = 1) {
+        network.levels.forEach(level=> {
+            for (var i = 0; i < level.biases.length; i++) {
+                level.biases[i] = lerp(level.biases[i], Math.random()*2-1,
+                    amount)
+            }
+
+
+            for (var i = 0; i < level.wieghts.length; i++) {
+                for (var j = 0; j < level.wieghts[i].length; j++) {
+                    level.wieghts[i][j] = lerp(level.wieghts[i][j], Math.random()*2-1, amount)
+
+                }
+            }
+        })
     }
 
 
@@ -226,7 +243,8 @@ class NeuralNetwork {
 
 
 class Level {
-    constructor(inputCount, outputCount) {
+    constructor(inputCount,
+        outputCount) {
         this.input = new Array(inputCount)
         this.output = new Array(outputCount)
         this.biases = new Array(outputCount)
@@ -241,7 +259,7 @@ class Level {
 
     }
 
-    static #randomize(level) {
+    static #randomize(level) {
         for (var i = 0; i < level.input.length; i++) {
             for (var j = 0; j < level.output.length; j++) {
                 level.wieghts[i][j] = Math.random()*2-1
@@ -256,8 +274,8 @@ class Level {
 
     }
 
-    static feedForward(giveInputs, level,tt="nottest") {
-        let outs=Array(4)
+    static feedForward(giveInputs, level, tt = "nottest") {
+        let outs = Array(4)
         for (var i = 0; i < level.input.length; i++) {
             level.input[i] = giveInputs[i]
         }
@@ -267,7 +285,7 @@ class Level {
             for (var j = 0; j < level.input.length; j++) {
                 sum += level.input[j]*level.wieghts[j][i]
             }
-        
+
 
             if (sum > level.biases[i]) {
                 outs[i] = 1
@@ -277,8 +295,8 @@ class Level {
 
 
         }
-        if(tt=="test"){
-        console.log(outs)
+        if (tt == "test") {
+            console.log(outs)
         }
         return outs
 
@@ -582,20 +600,45 @@ function polyIntersect(poly1, poly2) {
 ctx = canvas.getContext("2d")
 road = new Road(canvas.width/2, canvas.width*0.9, 5)
 
-
-cars = generateCars(50)
+ var N=1
+cars = generateCars(N)
 
 var traffic = [
-    new Car(road.getLaneCenter(4), -100, 30, 50, "Dummy"), new Car(road.getLaneCenter(1), -200, 30, 50, "Dummy")
+    new Car(road.getLaneCenter(4), -100, 30, 50, "Dummy", 2), new Car(road.getLaneCenter(2), -200, 30, 50, "Dummy", 2), new Car(road.getLaneCenter(1), -700, 30, 50, "Dummy", 2), new Car(road.getLaneCenter(2), -400, 30, 50, "Dummy", 2),
+    new Car(road.getLaneCenter(2), -800, 30, 50, "Dummy", 2), new Car(road.getLaneCenter(1), -900, 10, 40, "Dummy", 2), new Car(road.getLaneCenter(2), -100, 20, 50, "Dummy", 2),
+
+
+
 
 ]
 
 
+var bestCar = cars[0]
+if (localStorage.getItem("bestCar")) {
+    for (var i = 0; i < cars.length; i++) {
+        cars[i].brain = JSON.parse(localStorage.getItem("bestCar"))
+        if (i != 0) {
+            NeuralNetwork.mutate(cars[i].brain, 0)
+        }
+    }
+
+}
+
+
+function save() {
+    localStorage.setItem("bestCar", JSON.stringify(bestCar.brain))
+}
+
+
+function discard() {
+    localStorage.removeItem("bestCar")
+}
+
 
 function generateCars(N) {
-    let cars=[]
+    let cars = []
     for (var i = 0; i < N; i++) {
-        cars.push(new Car(road.getLaneCenter(2),100,30,50,"AI"))
+        cars.push(new Car(road.getLaneCenter(2), 100, 30, 50, "AI", 5))
     }
     return cars
 }
@@ -605,30 +648,30 @@ animate()
 
 function animate() {
     canvas.height = window.innerHeight
-    bestCar=cars.find(e=>e.y==Math.min(...cars.map(s=>s.y)))
+    bestCar = cars.find(e=>e.y == Math.min(...cars.map(s=>s.y)))
 
     for (var i = 0; i < traffic.length; i++) {
         traffic[i].update(road.borders, [])
     }
     for (var i = 0; i < cars.length; i++) {
         cars[i].update(road.borders, traffic)
-    
+
     }
-    
+
     ctx.save()
     ctx.translate(0, -bestCar.y+canvas.height*0.7)
     road.draw(ctx)
     for (var i = 0; i < traffic.length; i++) {
         traffic[i].draw(ctx, "red")
     }
-    ctx.globalAlpha=0.2
+    ctx.globalAlpha = 0.2
     for (var i = 0; i < cars.length; i++) {
-        cars[i].draw(ctx,"blue")
-    
+        cars[i].draw(ctx, "blue")
+
     }
-    ctx.globalAlpha=1
-    bestCar.draw(ctx,"blue",true)
-    
+    ctx.globalAlpha = 1
+    bestCar.draw(ctx, "blue", true)
+
 
     ctx.restore()
 
